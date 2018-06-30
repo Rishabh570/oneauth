@@ -1,35 +1,36 @@
 /**
  * Created by championswimmer on 13/03/17.
  */
-const router = require('express').Router()
-const cel = require('connect-ensure-login')
-const acl = require('../../middlewares/acl')
+const router = require("express").Router();
+const cel = require("connect-ensure-login");
+const acl = require("../../middlewares/acl");
 
-const models = require('../../db/models').models
+const models = require("../../db/models").models;
+const {findClient, findAllClient} = require("../../controllers/clients");
 
 
-router.get('/',acl.ensureAdmin,function (req,res,next) {
-    models.Client.findAll({})
-        .then(function (clients) {
-            return res.render('client/all',{clients:clients})
-        }).catch(function(err){
-            res.send("No clients Registered")
-    })
+router.get("/",acl.ensureAdmin,function (req,res,next) {
+    try {
+        const clients = await findAllClient();
+        return res.render("client/all", { clients:clients });
+    } catch (error) {
+        res.send("No clients Registered");
+    }
 })
 
-router.get('/add',
-    cel.ensureLoggedIn('/login'),
+router.get("/add",
+    cel.ensureLoggedIn("/login"),
     function (req, res, next) {
-        return res.render('client/add')
+        return res.render("client/add")
     }
 )
 
-router.get('/:id',
-    cel.ensureLoggedIn('/login'),
+router.get("/:id",
+    cel.ensureLoggedIn("/login"),
     function (req, res, next) {
-        models.Client.findOne({
-            where: {id: req.params.id}
-        }).then(function (client) {
+        async function (req, res, next) {
+        try {
+            const client = await findClient(req.params.id)
             if (!client) {
                 return res.send("Invalid Client Id")
             }
@@ -37,18 +38,19 @@ router.get('/:id',
                 return res.send("Unauthorized user")
             }
 
-            return res.render('client/id', {client: client})
-        })
-    }
-)
+            return res.render("client/id", {client: client})
+        } catch (err) {
+            throw err;
+        }
+    })
 
 
-router.get('/:id/edit',
-    cel.ensureLoggedIn('/login'),
+router.get("/:id/edit",
+    cel.ensureLoggedIn("/login"),
     function (req, res, next) {
-        models.Client.findOne({
-            where: {id: req.params.id}
-        }).then(function (client) {
+        async function (req, res, next) {
+        try {
+            const client = await findClient(req.params.id)    
             if (!client) {
                 return res.send("Invalid Client Id")
             }
@@ -59,9 +61,10 @@ router.get('/:id/edit',
             client.clientCallbacks = client.callbackURL.join(";")
             client.clientdefaultURL = client.defaultURL;
 
-            return res.render('client/edit', {client: client})
-        })
-    }
-)
+            return res.render("client/edit", {client: client})
+        } catch (err) {
+            throw err;
+        }
+    })
 
 module.exports = router

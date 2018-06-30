@@ -4,7 +4,7 @@
 const oauth = require('oauth2orize')
     , cel = require('connect-ensure-login')
 
-const {getClientById, createGrantCode,createAuthToken, findGrantCode, findAuthToken, findCreateAuthToken} = require('../controllers/oauth')
+const {getClientById, generateGrantCode, generateAuthToken, searchGrantCode, searchAuthToken, findCreateAuthToken} = require('../controllers/oauth')
     , passport = require('../passport/passporthandler')
     , debug = require('debug')('oauth:oauthserver')
 
@@ -31,7 +31,7 @@ server.grant(oauth.grant.code(
     async function (client, redirectURL, user, ares, done) {
         debug('oauth: getting grant code for ' + client.id + ' and ' + user.id)
         try {
-            const grantCode = await createGrantCode(client.id,user.id);
+            const grantCode = await generateGrantCode(client.id,user.id);
             return done(null, grantCode);
         } catch (error) {
             return done(error)
@@ -44,7 +44,7 @@ server.grant(oauth.grant.code(
 server.grant(oauth.grant.token(
     async function (client, user, ares, done) {
         try {
-            const authToken = await createAuthToken(client.id,user.id);
+            const authToken = await generateAuthToken(client.id, user.id);
             return done(null, authToken);
         } catch (error) {
             return done(error)
@@ -58,8 +58,8 @@ server.grant(oauth.grant.token(
 server.exchange(oauth.exchange.code(
     async function (client, code, redirectURI, done) {
         try {
-            const grantCode = await findGrantCode(client, code, redirectURI)
-            const authToken = await findCreateAuthToken(grantCode )
+            const grantCode = await searchGrantCode(client, code, redirectURI)
+            const authToken = await findCreateAuthToken(grantCode)
             return done(null, authToken);
         } catch (error) {
             return done(error)
@@ -91,7 +91,7 @@ const authorizationMiddleware = [
             return done(null, true)
         }
         try {
-            const authToken = await findAuthToken(client.id,user.id)
+            const authToken = await searchAuthToken(client.id,user.id)
             return done(null, authToken);
         } catch (error) {
             return done(error);
@@ -131,7 +131,7 @@ server.exchange(oauth.exchange.clientCredentials(async (client, scope, done) => 
 
         // Everything validated, return the token
         // const token = generator.genNcharAlphaNum(config.AUTH_TOKEN_SIZE)
-        const authToken = await createAuthToken(client.get().id)
+        const authToken = await generateAuthToken(client.get().id)
         return done(null,authToken)
     } catch (error) {
         debug(error)

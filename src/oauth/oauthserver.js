@@ -1,12 +1,20 @@
 /**
  * Created by championswimmer on 10/03/17.
  */
-const oauth = require("oauth2orize")
-    , cel = require("connect-ensure-login")
+const oauth = require("oauth2orize");
+const cel = require("connect-ensure-login");
 
-const {getClientById, generateGrantCode, generateAuthToken, searchGrantCode, searchAuthToken, findCreateAuthToken, generateAuthTokenForClient} = require("../controllers/oauth")
-    , passport = require("../passport/passporthandler")
-    , debug = require("debug")("oauth:oauthserver")
+const {
+    getClientById, 
+    generateGrantCode, 
+    generateAuthToken, 
+    searchGrantCode, 
+    searchAuthToken, 
+    findCreateAuthToken
+} = require("../controllers/oauth");
+
+const passport = require("../passport/passporthandler");
+const debug = require("debug")("oauth:oauthserver");
 
 const server = oauth.createServer()
 
@@ -29,9 +37,9 @@ server.deserializeClient(async function (clientId, done) {
  */
 server.grant(oauth.grant.code(
     async function (client, redirectURL, user, ares, done) {
-        debug("oauth: getting grant code for " + client.id + " and " + user.id)
+        debug("oauth: getting grant code for " + client.id + " and " + user.id);
         try {
-            const grantCode = await generateGrantCode(client.id,user.id);
+            const grantCode = await generateGrantCode(client.id, user.id);
             return done(null, grantCode);
         } catch (error) {
             return done(error);
@@ -45,9 +53,9 @@ server.grant(oauth.grant.token(
     async function (client, user, ares, done) {
         try {
             const authToken = await generateAuthToken(client.id, user.id);
-            return done(null, authToken);
+            return done(null, authToken.token);
         } catch (error) {
-            return done(error)
+            return done(error);
         }
     }
 ))
@@ -58,6 +66,7 @@ server.grant(oauth.grant.token(
 server.exchange(oauth.exchange.code(
     async function (client, code, redirectURI, done) {
         try {
+            debug("oneauth: exchange");
             const grantCode = await searchGrantCode(client, code, redirectURI);
             const authToken = await findCreateAuthToken(grantCode);
             return done(null, authToken);
@@ -72,10 +81,10 @@ server.exchange(oauth.exchange.code(
 const authorizationMiddleware = [
     cel.ensureLoggedIn("/login"),
     server.authorization(async function (clientId, callbackURL, done) {
-        debug("oauth: authorize")
+        debug("oauth: authorize");
         try {
             const client = await getClientById(clientId);
-            if (!localClient) {
+            if (!client) {
                 return done(null, false);
             }
             debug(callbackURL);
@@ -94,10 +103,10 @@ const authorizationMiddleware = [
             return done(null, true);
         }
         try {
-            const authToken = await searchAuthToken(client.id,user.id);
+            const authToken = await searchAuthToken(client.id, user.id);
             return done(null, authToken);
         } catch (error) {
-            debug(error);
+            return done(error);
         }
 
     }),
@@ -133,10 +142,10 @@ server.exchange(oauth.exchange.clientCredentials(async (client, scope, done) => 
         }
 
         // Everything validated, return the token
-        const authToken = await generateAuthTokenForClient(client.get().id);
-        return done(null,authToken);
+        const authToken = await generateAuthToken(client.get().id);
+        return done(null, authToken.get().token);
     } catch (error) {
-        debug(error);
+        done(error);
     }
 }));
 

@@ -30,4 +30,4 @@ router.use('/forgot', makeGaEvent('view', 'page', '/forgot'), forgotroute)
 router.use('/apps', makeGaEvent('view', 'page', '/apps'), approute)
 
 
-module.exports = router
+module.exports = router;

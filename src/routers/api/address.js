@@ -32,8 +32,8 @@ router.post("/:id", cel.ensureLoggedIn("/login"), async function (req, res) {
     if (hasNull(req.body, ["label", "first_name", "last_name", "number", "email", "pincode", "street_address", "landmark", "city", "stateId", "countryId"])) {
         return res.send(400);
     }
-    let addrId = parseInt(req.params.id);
-    let userId = parseInt(req.user.id);
+    const addrId = parseInt(req.params.id);
+    const userId = parseInt(req.user.id);
 
     try {
         const response = await updateDemographics(req.body, addrId, userId);
@@ -46,4 +46,4 @@ router.post("/:id", cel.ensureLoggedIn("/login"), async function (req, res) {
 })
 
 
-module.exports = router
+module.exports = router;

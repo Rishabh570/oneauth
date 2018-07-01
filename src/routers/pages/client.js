@@ -4,9 +4,12 @@
 const router = require("express").Router();
 const cel = require("connect-ensure-login");
 const acl = require("../../middlewares/acl");
-
 const models = require("../../db/models").models;
-const {findClient, findAllClient} = require("../../controllers/clients");
+
+const {
+    findClient, 
+    findAllClient
+} = require("../../controllers/clients");
 
 
 router.get("/",acl.ensureAdmin,function (req,res,next) {
@@ -27,44 +30,43 @@ router.get("/add",
 
 router.get("/:id",
     cel.ensureLoggedIn("/login"),
-    function (req, res, next) {
-        async function (req, res, next) {
+    async function (req, res, next) {
         try {
-            const client = await findClient(req.params.id)
+            const client = await findClient(req.params.id);
             if (!client) {
-                return res.send("Invalid Client Id")
+                return res.send("Invalid Client Id");
             }
             if (client.userId != req.user.id) {
-                return res.send("Unauthorized user")
+                return res.send("Unauthorized user");
             }
 
-            return res.render("client/id", {client: client})
+            return res.render("client/id", {client: client});
         } catch (err) {
             throw err;
         }
-    })
+    }
+)
 
 
 router.get("/:id/edit",
     cel.ensureLoggedIn("/login"),
-    function (req, res, next) {
-        async function (req, res, next) {
+    async function (req, res, next) {
         try {
-            const client = await findClient(req.params.id)    
+            const client = await findClient(req.params.id) ;   
             if (!client) {
-                return res.send("Invalid Client Id")
+                return res.send("Invalid Client Id");
             }
             if (client.userId != req.user.id) {
-                return res.send("Unauthorized user")
+                return res.send("Unauthorized user");
             }
-            client.clientDomains = client.domain.join(";")
-            client.clientCallbacks = client.callbackURL.join(";")
+            client.clientDomains = client.domain.join(";");
+            client.clientCallbacks = client.callbackURL.join(";");
             client.clientdefaultURL = client.defaultURL;
 
-            return res.render("client/edit", {client: client})
+            return res.render("client/edit", {client: client});
         } catch (err) {
             throw err;
         }
     })
 
-module.exports = router
+module.exports = router;

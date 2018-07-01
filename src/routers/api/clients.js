@@ -33,4 +33,4 @@ router.post("/edit/:id", cel.ensureLoggedIn("/login"),
     })
 
 
-module.exports = router
+module.exports = router;

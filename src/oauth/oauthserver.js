@@ -3,26 +3,25 @@
  */
 const oauth = require("oauth2orize");
 const cel = require("connect-ensure-login");
-
-const {
-    getClientById, 
-    generateGrantCode, 
-    generateAuthToken, 
-    searchGrantCode, 
-    searchAuthToken, 
-    findCreateAuthToken
-} = require("../controllers/oauth");
-
-const passport = require("../passport/passporthandler");
 const debug = require("debug")("oauth:oauthserver");
+const passport = require("../passport/passporthandler");
+const {
+    getClientById,
+    searchAuthToken,
+    searchGrantCode,
+    generateGrantCode,
+    generateAuthToken,
+    findOrCreateAuthToken
+} = require("../controllers/auth");
+
 
 const server = oauth.createServer()
 
-server.serializeClient(function (client, done) {
+server.serializeClient((client, done) => {
     return done(null, client.id)
 })
 
-server.deserializeClient(async function (clientId, done) {
+server.deserializeClient(async (clientId, done) => {
     try {
         const client = await getClientById(clientId);
         return done(null, client);
@@ -68,7 +67,7 @@ server.exchange(oauth.exchange.code(
         try {
             debug("oneauth: exchange");
             const grantCode = await searchGrantCode(client, code, redirectURI);
-            const authToken = await findCreateAuthToken(grantCode);
+            const authToken = await findOrCreateAuthToken(grantCode);
             return done(null, authToken);
         } catch (error) {
             return done(error);

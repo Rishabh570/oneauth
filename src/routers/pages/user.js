@@ -10,8 +10,22 @@ const models = require("../../db/models").models;
 const acl = require("../../middlewares/acl");
 const multer = require("../../utils/multer");
 
-const {findUserByIdAndIncludes, findUserById, updateUser} = require("../../controllers/user");
-const {findAllClientbyUser} = require("../../controllers/clients");
+const {
+    updateUser,
+    findUserById,
+    findUserByIdAndIncludes,
+    updateUserLocalByUserId,
+} = require("../../controllers/user");
+
+const {
+    findAllClientsbyUserId
+} = require("../../controllers/clients");
+
+const {
+    findAllColleges,
+    findAllBranches
+} = require("../../controllers/demographics");
+
 
 router.get("/me",
     cel.ensureLoggedIn("/login"),
@@ -44,8 +58,8 @@ router.get("/me",
 router.get("/me/edit",
     cel.ensureLoggedIn("/login"),
     async function (req, res, next) {
-        Promise.all([
-            await findUserByIdAndIncludes(req.user.id,[
+        await Promise.all([
+            findUserByIdAndIncludes(req.user.id,[
                 {
                     model: models.Demographic,
                     include: [
@@ -55,8 +69,8 @@ router.get("/me/edit",
                     ]
                 }
             ]),
-            models.College.findAll({}),
-            models.Branch.findAll({})
+            findAllColleges(),
+            findAllBranches()
         ]).then(([user, colleges, branches]) => {
             if (!user) {
                 res.redirect("/login");
@@ -71,7 +85,6 @@ router.get("/me/edit",
 
 router.post("/me/edit",
     cel.ensureLoggedIn("/login"),
-
     function(req, res, next) {
         let upload = multer.upload.single("userpic");
         upload(req, res, ((err) => {
@@ -90,7 +103,8 @@ router.post("/me/edit",
         }));
     },
     async function (req, res, next) {
-        //exit if password doesn"t match
+
+        // Exit if password does not match
         if ((req.body.password) && (req.body.password !== req.body.repassword)) {
             req.flash("error", "Passwords do not match");
             return res.redirect("edit");
@@ -103,7 +117,7 @@ router.post("/me/edit",
         }
 
         try {
-            const user = await findUserByIdAndIncludes(req.user.id,[models.Demographic]);
+            const user = await findUserByIdAndIncludes(req.user.id, [models.Demographic]);
             const demographic = user.demographic || {};
             
             user.firstname = req.body.firstname;
@@ -135,19 +149,11 @@ router.post("/me/edit",
             if (req.body.collegeId) {
                 demographic.collegeId = +req.body.collegeId;
             }
-            await models.Demographic.upsert(demographic, {
-                where: {
-                    userId: req.user.id
-                }
-            })
+            await upsertDemographicByUserId();
 
             if (req.body.password) {
                 const passHash = await passutils.pass2hash(req.body.password);
-                await models.UserLocal.update({
-                    password: passHash
-                }, {
-                    where: {userId: req.user.id}
-                })
+                await updateUserLocalByUserId();
             }
             res.redirect("/users/me");
         } catch (err) {
@@ -218,7 +224,7 @@ router.get("/me/clients",
     cel.ensureLoggedIn("/login"),
     async function (req, res, next) {
         try {
-            const clients = await findAllClientbyUser(req.user.id);
+            const clients = await findAllClientsbyUserId(req.user.id);
             return res.render("client/all", {clients: clients});
         } catch(err) {
             res.send("No clients registered");

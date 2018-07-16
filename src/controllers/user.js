@@ -1,10 +1,10 @@
 const models = require("../db/models").models;
 
 // Finds user by ID
-function findUserById(userid){
+function findUserById(userId){
     return new Promise((resolve, reject) => {
         models.User.findOne({
-            where: {id: userid},
+            where: {id: userId},
         })
         .then((user) => {
             resolve(user);
@@ -16,11 +16,11 @@ function findUserById(userid){
 }
 
 // Finds user by ID and Includes
-function findUserByIdAndIncludes(userid, includes){
+function findUserByIdAndIncludes(userId, includes){
     return new Promise((resolve, reject) => {
         models.User.findOne({
             // attributes: attributes,
-            where: {id: userid},
+            where: {id: userId},
             include: includes
         })
         .then((user) => {
@@ -33,11 +33,11 @@ function findUserByIdAndIncludes(userid, includes){
 }
 
 // Finds user by ID and Attributes
-function findUserByIdAndAttrs(userid, attributes){
+function findUserByIdAndAttrs(userId, attributes){
     return new Promise((resolve, reject) => {
         models.User.findOne({
             attributes: attributes,
-            where: {id: userid},
+            where: {id: userId},
         })
         .then((user) => {
             resolve(user);
@@ -49,10 +49,10 @@ function findUserByIdAndAttrs(userid, attributes){
 }
 
 // Updates User
-function updateUser(userid, newValues){
+function updateUser(userId, newValues){
     return new Promise((resolve, reject) => {
         models.User.update(newValues, {
-            where: {id: userid},
+            where: {id: userId},
             returning: true
         })
         .then((user) => {
@@ -63,6 +63,24 @@ function updateUser(userid, newValues){
         });
     });
 }
+
+// Updates UserLocal
+function updateUserLocalByUserId(passhash, userId) {
+    return new Promise((resolve, reject) => {
+        models.UserLocal.update({
+            password: passhash
+        }, {
+            where: {userId: userId}
+        })
+        .then(() => {
+            resolve(true);
+        })
+        .catch((err) => {
+            reject(err);
+        });
+    });
+}
+
 
 // Deletes Auth Token
 function deleteAuthToken(token){
@@ -81,6 +99,12 @@ function deleteAuthToken(token){
     });
 }
 
+// EXPORTS
 module.exports = {
-    findUserById, findUserByIdAndAttrs, findUserByIdAndIncludes, deleteAuthToken, updateUser
+    updateUser,
+    findUserById,
+    deleteAuthToken,
+    findUserByIdAndAttrs,
+    updateUserLocalByUserId,
+    findUserByIdAndIncludes, 
 };

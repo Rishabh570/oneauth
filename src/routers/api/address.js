@@ -1,13 +1,16 @@
 const router = require("express").Router();
-const {db} = require("../../db/models");
 const cel = require("connect-ensure-login");
 const Raven = require("raven");
+const { db } = require("../../db/models");
 const {hasNull} = require("../../utils/nullCheck");
 
 const {
-    generateDemographics,
-    updateDemographics
-    } = require("../../controllers/demographics");
+    findOrCreateDemographic,
+    createAddress,
+    findDemographic,
+    updateAddressbyDemoId,
+    updateAddressbyAddrId,
+} = require("../../controllers/demographics");
 
 
 router.post("/", cel.ensureLoggedIn("/login"), async function (req, res) {
@@ -18,8 +21,30 @@ router.post("/", cel.ensureLoggedIn("/login"), async function (req, res) {
             var redirectUrl = req.query.returnTo;
         }
         try {
-            const returnURL = await generateDemographics(req.body, req.user.id);
-            res.redirect(returnURL);
+            const demographics = await findOrCreateDemographic(req.user.id);
+            const returnURL = await createAddress({
+                label: req.body.label,
+                first_name: req.body.first_name,
+                last_name: req.body.last_name,
+                mobile_number: req.body.number,
+                email: req.body.email,
+                pincode: req.body.pincode,
+                street_address: req.body.street_address,
+                landmark: req.body.landmark,
+                city: req.body.city,
+                stateId: req.body.stateId,
+                countryId: req.body.countryId,
+                demographicId: demographics.id,
+                // if no addresses, then first one added is primary
+                primary: !demographics.get().addresses
+            });
+
+            if (req.body.returnTo) {
+                res.redirect(req.body.returnTo);
+            } else {
+                res.redirect("/address/");
+            }
+
         } catch (err) {
             Raven.captureException(err);
             req.flash("error", "Error inserting Address");
@@ -36,9 +61,36 @@ router.post("/:id", cel.ensureLoggedIn("/login"), async function (req, res) {
     const userId = parseInt(req.user.id);
 
     try {
-        const response = await updateDemographics(req.body, addrId, userId);
-        res.redirect(`/address/${addrId}`);
-        } catch (err) {
+        db.transaction(async (t) => {
+            if (req.body.primary === "on") {
+                let demographic = await findDemographic(userId);
+                let demographicId = demographic.id;
+                await updateAddressbyDemoId(demographicId,
+                    {primary: false},
+                );
+            }
+            await updateAddressbyAddrId(addrId, {
+                label: req.body.label,
+                first_name: req.body.first_name,
+                last_name: req.body.last_name,
+                mobile_number: req.body.number,
+                email: req.body.email,
+                pincode: req.body.pincode,
+                street_address: req.body.street_address,
+                landmark: req.body.landmark,
+                city: req.body.city,
+                stateId: req.body.stateId,
+                countryId: req.body.countryId,
+                primary: req.body.primary === "on"
+            });
+            if (req.body.returnTo) {
+                return res.redirect(req.body.returnTo);
+            }else {
+                return res.redirect(`address/${addrId}`);
+            }        
+        });
+
+    } catch (err) {
             Raven.captureException(err);
             req.flash("error", "Could not update address");
             res.redirect("/address");

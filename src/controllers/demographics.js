@@ -101,7 +101,7 @@ function findAllBranches() {
 }
 
 // Finds the demographic or creates it
-function findCreateDemographic(userId) {
+function findOrCreateDemographic(userId) {
     return new Promise((resolve, reject) => {
         models.Demographic.findCreateFind({
             where: {userId: userId},
@@ -109,6 +109,23 @@ function findCreateDemographic(userId) {
         })
         .then(([demographics, created]) => {
             resolve(demographics);
+        })
+        .catch((err) => {
+            reject(err);
+        });
+    });
+}
+
+// Updates or Inserts into User Demographic
+function upsertDemographicByUserId(UserDemographic, userId) {
+    return new Promise((resolve, reject) => {
+        models.Demographic.upsert(UserDemographic, {
+            where: {
+                userId: userId
+            }
+        })
+        .then(() => {
+            resolve(true);
         })
         .catch((err) => {
             reject(err);
@@ -158,74 +175,18 @@ function updateAddressbyDemoId(demoId, options){
 }
 
 
-function generateDemographics(body, id) {
-    return new Promise ((resolve, reject) => {
-        findCreateDemographic(id)
-        .then(([demographics, created]) => createAddress({
-            label: body.label,
-            first_name: body.first_name,
-            last_name: body.last_name,
-            mobile_number: body.number,
-            email: body.email,
-            pincode: body.pincode,
-            street_address: body.street_address,
-            landmark: body.landmark,
-            city: body.city,
-            stateId: body.stateId,
-            countryId: body.countryId,
-            demographicId: demographics.id,
-            // if no addresses, then first one added is primary
-            primary: !demographics.get().addresses
-        }))
-        .then((address) => {
-            if (body.returnTo) {
-                resolve(body.returnTo);
-            } else {
-                resolve("/address/");
-            }
-        })
-        .catch((err) => {
-            reject(err);
-        });
-    });
-}
-    
-function updateDemographics(body, addrId, userId) {
-    return new Promise ((resolve, reject) => {
-        db.transaction(async (t) => {
-        if (body.primary === "on") {
-            let demographic = findDemographic(userId);
-            let demographicId = demographic.id;
-            updateAddressbyDemoId(demographicId,
-                {primary: false},
-            );
-        }
-        updateAddressbyAddrId(addrId, {
-            label: body.label,
-            first_name: body.first_name,
-            last_name: body.last_name,
-            mobile_number: body.number,
-            email: body.email,
-            pincode: body.pincode,
-            street_address: body.street_address,
-            landmark: body.landmark,
-            city: body.city,
-            stateId: body.stateId,
-            countryId: body.countryId,
-            primary: body.primary === "on"
-            }
-        );
-        resolve(true);  // Successfully updation done
-        });
-    });
-}
-
-
-
 // EXPORTS
 module.exports = {
-    findCreateDemographic,updateAddressbyDemoId,
-    updateAddressbyAddrId, findAddress, createAddress,
-    findAllAddresses, findAllStates, findAllCountries, findAllColleges,findAllBranches, findDemographic, generateDemographics,
-    updateDemographics
+    findAddress,
+    createAddress,
+    findAllStates,
+    findAllColleges,
+    findAllBranches, 
+    findDemographic,
+    findAllCountries,
+    findAllAddresses,
+    updateAddressbyDemoId,
+    updateAddressbyAddrId,
+    findOrCreateDemographic,
+    upsertDemographicByUserId,
 };

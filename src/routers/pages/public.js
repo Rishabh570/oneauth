@@ -8,18 +8,18 @@ const models = require("../../db/models").models;
 const router = require("express").Router();
 const verifyemail = require("../../routers/verifyemail");
 
-import {
+const {
     findAllBranches,
     findAllColleges
-} from "../../contollers/demographics";
+} = require("../../controllers/demographics");
 
 router.get("/login", cel.ensureNotLoggedIn("/"), function (req, res, next) {
     res.render("login", {title: "Login | OneAuth", error: req.flash("error")});
 })
 router.get("/signup", cel.ensureNotLoggedIn("/"), async function (req, res, next) {
-    Promise.all([
-        await findAllBranches(),
-        await findAllColleges()
+    await Promise.all([
+        findAllBranches(),
+        findAllColleges()
     ])
     .then(([colleges, branches]) => {
         res.render("signup", {title: "Signup | OneAuth", colleges:colleges, branches:branches});

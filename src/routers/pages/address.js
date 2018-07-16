@@ -12,9 +12,9 @@ const {
 
 router.get("/",
     cel.ensureLoggedIn("/login"),
-        async function (req, res, next) {
+    async function (req, res, next) {
         try {
-            const addresses = await findAllAddresses(req.user.id, [models.Demographic])
+            const addresses = await findAllAddresses(req.user.id, [models.Demographic, models.State, models.Country]);
             if (!addresses || addresses.length === 0) {
                 throw new Error("User has no addresses");
             }
@@ -30,9 +30,9 @@ router.get("/",
 router.get("/add",
     cel.ensureLoggedIn("/login"),
     async function (req, res, next) {
-        Promise.all([
-            await findAllStates(),
-            await findAllCountries()
+        await Promise.all([
+            findAllStates(),
+            findAllCountries()
         ])
         .then(([states, countries]) => {
             return res.render("address/add", {states, countries});
@@ -65,10 +65,10 @@ router.get("/:id",
 router.get("/:id/edit",
     cel.ensureLoggedIn("/login"),
     async function (req, res, next) {
-        Promise.all([
-            await findAddress(req.user.id, req.params.id),
-            await findAllStates(),
-            await findAllCountries()
+        await Promise.all([
+            findAddress(req.user.id, req.params.id),
+            findAllStates(),
+            findAllCountries()
         ])
         .then( ([address, states, countries]) => {
             if (!address) {

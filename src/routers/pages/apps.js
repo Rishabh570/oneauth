@@ -5,10 +5,10 @@ const router = require("express").Router();
 const cel = require("connect-ensure-login");
 const models = require("../../db/models").models;
 
-import {
+const {
     searchAllAuthTokens,
     searchAuthToken
-} from "../../contollers/auth";
+} = require("../../controllers/auth");
 
 
 router.get("/",

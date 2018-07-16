@@ -1,13 +1,15 @@
-const models = require("../db/models").models
-    , generator = require("../utils/generator")
-    , config = require("../../config");
+const models = require("../db/models").models;
+const generator = require("../utils/generator");
+const config = require("../../config");
 
 
-// Finds the Client by client ID
+// Finds the Client by clientId
 function getClientById(clientId) {
     return new Promise ((resolve, reject) => {
-        models.Client.findOne({ where: {id: clientId} })
-        .then((client)  => {
+        models.Client.findOne({
+            where: { id: clientId } 
+        })
+        .then((client) => {
             resolve(client);
         })
         .catch((err) => {
@@ -16,7 +18,7 @@ function getClientById(clientId) {
     });
 }
 
-// Creates the Grant code given the Client ID and User ID
+// Creates the Grant code given the ClientId and UserId
 function generateGrantCode(clientId, userId) {
     return new Promise ((resolve, reject) => {
         models.GrantCode.create({
@@ -42,10 +44,10 @@ function searchGrantCode(client, code, redirectURI) {
         })
         .then((grantCode) => {
             if (!grantCode) {
-                resolve(false); // Grant code doesn not exist
+                resolve(false);  // Grant code doesn not exist
             }
             if (client.id !== grantCode.client.id) {
-                resolve(false); // Client ID does not match
+                resolve(false);  // Client ID does not match
             }
             let callbackMatch = false;
             for (let url of client.callbackURL) {
@@ -63,7 +65,7 @@ function searchGrantCode(client, code, redirectURI) {
 }
 
 // Finds or Creates Auth Token
-function findCreateAuthToken(grantCode) {
+function findOrCreateAuthToken(grantCode) {
     return new Promise((resolve, reject) => {
         models.AuthToken.findCreateFind({
         where: {
@@ -151,7 +153,11 @@ function searchAllAuthTokens(userId) {
 
 // EXPORTS
 module.exports = {
-    getClientById, generateGrantCode,generateAuthToken, 
-    searchGrantCode, searchAuthToken, findCreateAuthToken, 
-    searchAllAuthTokens
+    getClientById,
+    searchGrantCode,
+    searchAuthToken,
+    generateAuthToken,
+    generateGrantCode,
+    searchAllAuthTokens,
+    findOrCreateAuthToken,
 };
